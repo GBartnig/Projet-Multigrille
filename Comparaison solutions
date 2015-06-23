@@ -1,0 +1,55 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%% PROJET MULTIGRID %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+n = 1024; % bien mettre un nombre pair
+
+[Ah] = Laplace1D(n-1);
+
+     D = sparse(1:n,1:n,2*ones(1,n),n,n);
+     E = sparse(2:n,1:n-1,-ones(1,n-1),n,n);
+   
+   
+b=zeros(1,n+1);
+x = ( linspace ( 0.0, 1.0, n+1 ) )'; 
+b(1) = 0.0;
+b(2:n) = sin(x(2:n))/n^2; % on divise 1 par n^2
+b(n+1) = 0.0;
+u_exact= Ah\b(2:n)';
+ 
+it = 4; % nombre d'itérations minimum à faire à chaque changement de grille
+tol = 1e-4; % tolérance absolue pour arrêter l'algorithme
+utol = 0.99; % tolérance de stationnarité pour changer de grille
+ 
+%resolution multi grille 
+[u, it_num] = test(n, it, tol, utol,b);
+
+ erreur = norm(u_exact-u(2:n));
+ disp('itérationsMG'); disp(it_num)
+ disp('erreurMG'); disp(erreur)
+ 
+ 
+ %%%%comparaison avec GS%%%%
+ d1=100;
+ it_numGS = 0;
+ uGS = zeros(n+1,1); % vecteur de la solution approchée
+
+ while(d1>tol)
+     
+   [ uGS, d1 ] = GS(b', uGS, Eh, Dh,n);
+ 
+   it_numGS = it_numGS + 1;
+  
+ end 
+ 
+ erreurGS=norm(u_exact-uGS(2:n));
+ disp('itérationsGS'); disp(it_numGS)
+ disp('erreurGS'); disp(erreurGS)
+
+ hold on 
+h1=plot(u_exact,'red');
+h2=plot(u(2:n));
+h3=plot(uGS(2:n),'green');
+title('Solutions avec n=1024 ')
+h=legend([h1 h2 h3],{'Solution exacte', 'Multigrid ','Gauss-Seidel'},3);  
+hold off
