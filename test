@@ -1,0 +1,102 @@
+function [ ufinal, it_num ] = test (n, it, tol, utol,fonction)
+
+%verifier que n est paire
+
+ %fonction qui crée le Laplacien
+ [Ah, Eh, Dh]=Laplacien1D(n-1);
+ 
+  %nl = n + n + k - 2;
+  nl=3*n;
+  u= zeros ( nl, 1 );
+  b = zeros ( nl, 1 );
+
+%it = 4; % nombre d'itérations max 
+it_num = 0; 
+%tol = 0.0001; % tolerence 
+%utol = 0.7; % tolérence de u 
+m = n;
+d1 = 0.0;
+j=0;
+%
+%  Initialization.
+%
+  
+  m = n;
+
+%
+%  L points to first entry of solution
+%  LL points to penultimate entry.
+%
+  l = 1;
+  ll = n;
+  x = ( linspace ( 0.0, 1.0, ll+1 ) )'; 
+  
+  b(1:ll+1)=fonction;
+ %b(1) = 0.0;
+ %b(2:ll) = sin(x(2:ll))/n^2; % on divise 1 par n^2
+ %b(ll+1) = 0.0;
+% 
+%  Gauss-Seidel iteration
+%
+
+  while (1)
+ 
+    d0 = d1;
+    j = j + 1;
+    %[ uu(l:ll+1), d1 ] = gauss_seidel ( n + 1, r(l:ll+1), uu(l:ll+1) );
+    [ u(l:ll+1), d1 ] = GS ( b(l:ll+1), u(l:ll+1), Eh, Dh,n);
+ %%%%%%%%
+ %%%%%%OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOK
+    it_num = it_num + 1;
+%
+%  Do at least 4 iterations at each level.
+%
+    if ( j < it )
+
+      continue
+    
+    %elseif(it_num>it_max && n==m)
+        
+     %   break
+%
+%  Enough iterations, satisfactory decrease, on finest grid, exit.
+%
+    elseif ( d1 < tol && n == m )
+
+      break
+%
+%  Enough iterations, satisfactory convergence, go finer.
+%
+    elseif ( d1 < tol )
+      [u(l-1-n-n:l-1),Ah,Dh,Eh]= Prolongement (u(l:ll+1),2*n,u(l-1-n-n:l-1));
+      
+      disp('Prolongement')
+      %uu(l-1-n-n:l-1) = ctof ( n + 1, uu(l:ll+1), n + n + 1, uu(l-1-n-n:l-1) );
+
+      n = n + n;
+      ll = l - 2;
+      l = l - 1 - n;
+      j = 0;
+%
+%  Enough iterations, slow convergence, 2 < N, go coarser.
+%
+    elseif ( utol * d0 <= d1 && 2 < n )
+        
+        [b(l+n+1:l+n+1+(n/2)),Dh,Eh,Ah,u(l+n+1:l+n+1+(n/2))] = Restriction (u(l:ll+1),b(l:ll+1),n);
+        disp('Restriction')
+
+      %[ uu(l+n+1:l+n+1+(n/2)), r(l+n+1:l+n+1+(n/2)) ] = ...
+       % ftoc ( n + 1, uu(l:ll+1), r(l:ll+1), (n/2)+1 );
+
+      n = n / 2;
+      l = ll + 2;
+      ll = ll + n + 1;
+      j = 0;
+
+    end
+
+  end
+  ufinal=zeros(n+1,1);
+  ufinal(1:n+1) = u(1:n+1);
+
+end
