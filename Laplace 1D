@@ -1,0 +1,15 @@
+function [ A ] = Laplace1D( n )
+%LAPLACE1D Summary of this function goes here
+%   Detailed explanation goes here
+
+h=1/(n+1);
+
+A=sparse(n,n);
+
+v=ones(n,1);
+
+A=spdiags([-v 2*v -v], -1:1, n,n);
+
+A=(1/h^2)*A;
+
+end
