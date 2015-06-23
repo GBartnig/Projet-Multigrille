@@ -1,0 +1,15 @@
+function [ u_sortie,diff ] = GS ( A,b,u,n )
+
+    tampon = u;
+
+    D = diag(diag(A));
+    E = tril(A)-D;
+    
+    u_sortie(2:n)=(E+D)\(b(2:n)-E'*tampon(2:n));
+    u_sortie(n+1)=0;
+
+    diff = sum ( abs ( u_sortie' - tampon ) );
+
+end
+
+  
