@@ -1,0 +1,95 @@
+%% --- PROJET MULTIGRILLE
+
+clear
+
+%% - Initialisation
+n=8; %verifier que n est paire 
+
+% on crée b
+b=zeros(n,1);
+b(1) = 0.0;
+b(2:n) = 1/(n^2);
+b(n+1) = 0.0;
+ 
+%on définit le Laplacien
+[Ah]=Laplace1D(n-1);
+ 
+u=zeros(n+1,1);
+rh=zeros(n+1,1);
+itmax = 4; % nombre d'itérations max 
+it_num = 0; 
+tol = 0.0001; % tolerence 
+utol = 0.7; % tolérence de u 
+m = n;
+d1 = 0.0;
+
+%% - Gauss-Seidel
+
+% ets ce que les deux boucles sont vraiment nécessaires ?
+
+j=0;
+
+v=u;
+while (j < itmax)   
+
+    [u,d1] = GS (Ah,b,v,n);
+    
+    j = j + 1;
+    it_num = it_num + 1;
+    v=u';
+    
+end
+
+d0 = d1;
+v=u;
+    
+ while( utol * d0 > d1 )
+     
+    d0 = d1;
+    [u,d1] = GS(Ah,b,v,n);
+    
+    j = j + 1;
+    it_num = it_num + 1;
+    v=u';
+    
+ end
+ 
+uh=u';
+
+%% - Passage entre les grilles
+
+ %on ecrit le résidu sur la grille fine 
+ rh(2:n)=b(2:n)-Ah*uh(2:n);
+ 
+ %on prend les matrices de prolongement et de restrictions
+  [R P]=Mat_operateur(n);
+  
+ %on passe le résidu sur la grille grossière 
+ r2h=zeros(n/2+1,1);
+ r2h(2:n/2)=R*rh(2:n);
+ r2h=r2h';
+ 
+ A2h=R*Ah*P;
+ D2h=diag(diag(A2h));
+ E2h=tril(A2h,1);
+
+ e2h=zeros(n/2+1,1);
+ 
+ while(d1>tol)
+     [ e2h,d1 ] = GS( A2h,r2h,e2h,n/2);
+ end
+ 
+ eh=zeros(n+1,1);
+ eh(2:n)=P*e2h(2:n/2);
+ uh=uh+eh;
+ 
+ d1= sum ( abs ( uh - (uh-eh) ) );
+ it1=0;
+ 
+ while(d1>tol)
+     [ uh,d1 ] = GS(Ah,b,uh,n );
+     it1=it1+1;
+ end
+ 
+ utest=Ah\b(2:n);
+ erreur=norm(utest-uh(2:n));
