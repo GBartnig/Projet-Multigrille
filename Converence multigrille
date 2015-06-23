@@ -1,0 +1,134 @@
+%%%%%temps de convergence v cycle%%%%
+
+taille=zeros(10,1);
+temps=zeros(10,1);
+
+for k=10:20
+    
+    n=2^k;
+    b=zeros(1,n+1);
+    x = ( linspace ( 0.0, 1.0, n+1 ) )'; 
+   b(1) = 0.0;
+   b(2:n) = sin(x(2:n))/n^2; % on divise 1 par n^2
+   b(n+1) = 0.0;
+    taille(k)=n;
+    it = 4; 
+    
+    if(n==8 || n==16)
+        tol = 1e-3; 
+        utol = 0.70;
+    else
+    
+    tol = 1e-4; 
+    utol = 0.99; 
+    end
+  tic;  
+[u, it_num] = test(n, it, tol, utol,b);
+temps(k)=toc;
+
+end
+h1=plot(taille(10:20).*log(taille(10:20)),temps(10:20));
+title('Ordre de convergence du v-cycle')
+xlabel('Nlog(N)');
+ylabel('temps de convergence');
+
+%%%%%temps de convergence GS%%%%
+
+[Ah, Eh, Dh] = Laplacien1D(n-1);
+
+ 
+  
+ 
+tailleGS=zeros(10,1);
+tempsGS=zeros(10,1);
+tol = 1e-4;
+for k=3:10
+    tic
+    n=2^k;
+    tailleGS(k)=n;
+    b=zeros(1,n+1);
+    x = ( linspace ( 0.0, 1.0, n+1 ) )'; 
+ b(1) = 0.0;
+ b(2:n) = sin(x(2:n))/n^2; % on divise 1 par n^2
+ b(n+1) = 0.0;
+    d1=100;
+ [Ah, Eh, Dh] = Laplacien1D(n-1);
+
+ it_numGS = 0;
+ uGS = zeros(n+1,1); % vecteur de la solution approchée
+
+ while(d1>tol)
+     
+   [ uGS, d1 ] = GS(b', uGS, Eh, Dh,n);
+ 
+   it_numGS = it_numGS + 1;
+   
+ end 
+tempsGS(k)=toc;
+
+end
+h1=plot((tailleGS(3:10).^2),tempsGS(3:10));
+title('Ordre de convergence de Gauss-Seidel')
+xlabel('N^2');
+ylabel('temps de convergence');
+
+%%%comparaison des u 
+
+n=256; 
+    tol = 1e-15; 
+    utol = 0.70;
+    
+    b=zeros(1,n+1);
+    x = ( linspace ( 0.0, 1.0, n+1 ) )'; 
+ b(1) = 0.0;
+ b(2:n) = sin(x(2:n))/n^2; % on divise 1 par n^2
+ b(n+1) = 0.0;
+ 
+[u, it_num] = test(n, it, tol, utol,b);
+
+
+ 
+
+d1=100;
+ [Ah, Eh, Dh] = Laplacien1D(n-1);
+
+ it_numGS = 0;
+ uGS = zeros(n+1,1); 
+ ustock = zeros(n+1,1); 
+ ustock1 = zeros(n+1,1); 
+ d1=100;
+ while(d1>tol)
+     
+   [ uGS, d1 ] = GS(b', uGS, Eh, Dh,n);
+ 
+   it_numGS = it_numGS + 1;
+   if(it_numGS==1)
+       %plot(uGS(2:n)-u_exact)
+       ustock1=uGS;
+       
+   end
+   if(it_numGS==it_num)
+       %plot(uGS(2:n)-u_exact)
+       ustock=uGS;
+   end
+ end 
+ 
+u_exact= Ah\b(2:n)';
+ 
+hold on 
+h1=plot(abs(u(2:n)-u_exact),'red');
+h2=plot(abs(ustock(2:n)-u_exact));
+h3=plot(abs(ustock1(2:n)-u_exact),'green');
+title('Difference de la solution exacte et approchée avec n=256 ')
+h=legend([h1 h2 h3],{'Multigrid après 193 itérations (convergence)', 'Gauss-Seidel après 193 itérations ','Erreur après 4 itérations'},3);  
+hold off
+
+residu1=b(2:n)'-Ah*ustock1(2:n);
+hold on
+%h1=plot(residu1,'green');
+h2=plot(b(2:n)'-Ah*u(2:n),'red');
+h3=plot(b(2:n)'-Ah*u_exact,'green');
+h4=plot(b(2:n)'-Ah*ustock(2:n),'blue');
+title('Résidus')
+h=legend([h2 h3 h4],{'Multigrid', 'Exacte','Gauss-Seidel'},3);  
+hold off
